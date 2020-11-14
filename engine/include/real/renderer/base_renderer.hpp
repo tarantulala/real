@@ -30,6 +30,7 @@ namespace Real
 		struct SceneData
 		{
 			glm::mat4 viewprojection;
+			glm::vec3 viewPosition;
 		};
 
 		static SceneData* sceneData;

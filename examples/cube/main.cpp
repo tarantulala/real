@@ -8,17 +8,8 @@ class SandboxLayer : public Real::Layer
 {
 private:
 	// @formatter:off
-	// Light
-	glm::vec3 lightPos      = { 1.0f, 1.0f, 1.0f, };
-	glm::vec3 lightAmbient  = { 1.0f, 1.0f, 1.0f, };
-	glm::vec3 lightDiffuse  = { 1.0f, 1.0f, 1.0f, };
-	glm::vec3 lightSpecular = { 1.0f, 1.0f, 1.0f, };
-
-	// Material
-	glm::vec3 materialAmbient  = { 1.0f, 0.5f, 0.31f };
-	glm::vec3 materialDiffuse  = { 1.0f, 0.5f, 0.31f };
-	glm::vec3 materialSpecular = { 0.5f, 0.5f, 0.5f };
-	float materialShininess    = 32.0f;
+	Real::Light light;
+	Real::Material material;
 
 	// Global
 	float cameraYOffset  = 2.0f;
@@ -41,6 +32,18 @@ public:
 	{
 		// Perspective
 		camera = new Real::PerspectiveCamera { 45.0f, 16.0f, 9.0f };
+		light = Real::Light {
+				{ 1.0f, 1.0f, 1.0f, },
+				{ 1.0f, 1.0f, 1.0f, },
+				{ 1.0f, 1.0f, 1.0f, },
+				{ 1.0f, 1.0f, 1.0f, },
+		};
+		material = Real::Material {
+				32.0f,
+				{ 1.0f, 0.5f, 0.31f },
+				{ 1.0f, 0.5f, 0.31f },
+				{ 0.5f, 0.5f, 0.5f },
+		};
 	}
 
 	virtual void OnImGUIRender() override
@@ -55,15 +58,16 @@ public:
 		ImGui::Text("Light");
 		ImGui::SliderFloat("Light Angle", &lightAngle, 0.0f, 360.0f, "%.1f");
 		ImGui::SliderFloat("Light Y", &lightYOffset, 2.0f, 5.0f, "%.1f");
-		ImGui::ColorEdit3("Light Ambient", glm::value_ptr(lightAmbient));
-		ImGui::ColorEdit3("Light Diffuse", glm::value_ptr(lightDiffuse));
-		ImGui::ColorEdit3("Light Specular", glm::value_ptr(lightSpecular));
+		ImGui::ColorEdit3("Light Ambient", light.AmbientPtr());
+		ImGui::ColorEdit3("Light Diffuse", light.DiffusePtr());
+		ImGui::ColorEdit3("Light Specular", light.SpecularPtr());
 
 		ImGui::Text("Material");
-		ImGui::SliderFloat("Material Shininess", &materialShininess, 32.0f, 256.0f, "%.0f");
-		ImGui::ColorEdit3("Material Ambient", glm::value_ptr(materialAmbient));
-		ImGui::ColorEdit3("Material Diffuse", glm::value_ptr(materialDiffuse));
-		ImGui::ColorEdit3("Material Specular", glm::value_ptr(materialSpecular));
+		ImGui::SliderFloat("Material Shininess", material.ShininessPtr(), 32.0f, 256.0f,
+				"%.0f");
+		ImGui::ColorEdit3("Material Ambient", material.AmbientPtr());
+		ImGui::ColorEdit3("Material Diffuse", material.DiffusePtr());
+		ImGui::ColorEdit3("Material Specular", material.SpecularPtr());
 
 		ImGui::End();
 	}
@@ -157,7 +161,7 @@ public:
 		float lightAngleRads = glm::radians(lightAngle);
 		float lx = glm::sin(lightAngleRads) * lightDistance;
 		float lz = glm::cos(lightAngleRads) * lightDistance;
-		lightPos = { lx, lightYOffset, lz, };
+		light.Pos({ lx, lightYOffset, lz, });
 
 		// Camera
 		camera->Position({ 0.0f, cameraYOffset, cameraDistance });
@@ -174,17 +178,16 @@ public:
 		const auto& shader = shaderLib.Get("material");
 		shader->Bind();
 		// Material
-		shader->UniformFloat("u_Material.ambient", materialAmbient);
-		shader->UniformFloat("u_Material.diffuse", materialDiffuse);
-		shader->UniformFloat("u_Material.specular", materialSpecular);
-		shader->UniformFloat("u_Material.shininess", materialShininess);
+		shader->UniformFloat("u_Material.ambient", material.Ambient());
+		shader->UniformFloat("u_Material.diffuse", material.Diffuse());
+		shader->UniformFloat("u_Material.specular", material.Specular());
+		shader->UniformFloat("u_Material.shininess", material.Shininess());
 		// Light
-		shader->UniformFloat("u_Light.position", lightPos);
-		shader->UniformFloat("u_Light.ambient", lightAmbient);
-		shader->UniformFloat("u_Light.diffuse", lightDiffuse);
-		shader->UniformFloat("u_Light.specular", lightSpecular);
+		shader->UniformFloat("u_Light.position", light.Pos());
+		shader->UniformFloat("u_Light.ambient", light.Ambient());
+		shader->UniformFloat("u_Light.diffuse", light.Diffuse());
+		shader->UniformFloat("u_Light.specular", light.Specular());
 		// Lighting
-		shader->UniformFloat("u_viewPos", camera->Position());
 
 		// Scene
 		Real::Renderer::StartScene(*camera);

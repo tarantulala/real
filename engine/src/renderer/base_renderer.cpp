@@ -15,6 +15,7 @@ namespace Real
 	void Renderer::StartScene(Real::Camera& camera) noexcept
 	{
 		sceneData->viewprojection = camera.Viewprojection();
+		sceneData->viewPosition = camera.Position();
 	}
 
 	void Renderer::Init()
@@ -32,6 +33,7 @@ namespace Real
 			const Real::Transform& model) noexcept
 	{
 		shader->Bind();
+		shader->UniformFloat("u_viewPos", sceneData->viewPosition);
 		shader->UniformMatrix("u_vp", sceneData->viewprojection);
 		shader->UniformMatrix("u_model", model.Matrix());
 		// TODO: implement render command queue
